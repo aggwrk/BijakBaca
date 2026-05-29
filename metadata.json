@@ -1,0 +1,6 @@
+{
+  "name": "Bijakbaca",
+  "description": "Analyze news URLs for balanced summaries, source framing, blind spots, global context, and critical questions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
