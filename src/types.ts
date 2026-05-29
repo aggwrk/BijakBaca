@@ -7,6 +7,7 @@ export interface Report {
   blindSpots: string;
   globalContext: string;
   criticalQuestions: string[];
+  isSimulated?: boolean;
 }
 
 export interface HistoryItem {

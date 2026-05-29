@@ -6,22 +6,23 @@
   --font-sans: "Inter", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  --color-paper-50: #FAF8F5;
-  --color-paper-100: #F4EFEA;
-  --color-paper-200: #EAE3D9;
-  --color-paper-300: #DDD3C4;
-  --color-bronze-50: #F9F6F0;
-  --color-bronze-200: #CBAE85;
-  --color-bronze-500: #A88755;
-  --color-bronze-800: #6B522E;
-  --color-charcoal-700: #3E4B57;
-  --color-charcoal-900: #1B242D;
+  /* Luxurious Dark Skeuomorphic Parchment & Slate Palette */
+  --color-paper-50: #12161A;     /* Deep carbon slate background */
+  --color-paper-100: #1A2127;    /* Slate-charcoal cards */
+  --color-paper-200: #242E37;    /* Dark panels and input bases */
+  --color-paper-300: #323F4B;    /* Separators / elegant border grooves */
+  --color-bronze-50: #23251D;    /* Olive-bronze accent tint for high-contrast highlights */
+  --color-bronze-200: #D9B786;   /* Burnished brass highlights */
+  --color-bronze-500: #C2995F;   /* Polished copper/bronze tint */
+  --color-bronze-800: #E2C9A1;   /* Super-readable radiant gold/bronze font text */
+  --color-charcoal-700: #93A6B5;  /* Soft-gray secondary text */
+  --color-charcoal-900: #E6ECF1;  /* High-contrast warm off-white news print ink text */
 }
 
 /* Custom newspaper ambient effects */
 body {
-  background-color: #FAF8F5;
-  color: #1B242D;
+  background-color: var(--color-paper-50);
+  color: var(--color-charcoal-900);
   font-family: var(--font-sans);
 }
 
@@ -31,13 +32,13 @@ body {
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #EAE3D9;
+  background: var(--color-paper-200);
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBAE85;
+  background: var(--color-bronze-500);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A88755;
+  background: var(--color-bronze-200);
 }
 

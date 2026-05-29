@@ -19,9 +19,13 @@ import {
   Info,
   Layers,
   Archive,
-  BookOpenCheck
+  BookOpenCheck,
+  FileDown,
+  EyeOff,
+  Compass
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { jsPDF } from "jspdf";
 import NewspaperLoading from "./components/NewspaperLoading";
 import { PRESET_ARTICLES, PresetArticle } from "./presets";
 import { Report, HistoryItem } from "./types";
@@ -32,7 +36,7 @@ const TRANSLATIONS = {
     tagline: "— SATU BERITA, BERAGAM SUDUT PANDANG — BACA LEBIH LUAS, PAHAMI LEBIH DALAM —",
     volumeMark: "VOL. 01 / NO. 12",
     editorialNotice: "DISUNTING UNTUK NEGARA HUKUM & WARGA CERDAS",
-    priceTag: "HARGA: MEMBACA AKTIF",
+    priceTag: "HARGA : GRATIS",
     placeholder: "Tempel URL artikel berita di sini (https://...)...",
     buttonAnalyze: "Analisa Berita",
     buttonAnalyzing: "Mencetak...",
@@ -77,14 +81,46 @@ const TRANSLATIONS = {
         t: "3. Menantang Berita",
         d: "Disertai pertanyaan kritis untuk membantu Anda melakukan investigasi mandiri daripada menelan bulat-bulat."
       }
-    ]
+    ],
+    tabUrl: "Tautan URL (Auto Scraper)",
+    tabText: "Salin & Tempel Teks Artikel",
+    headlineLabel: "Judul Berita",
+    siteNameLabel: "Nama Media / Penerbit",
+    rawTextLabel: "Teks Isi Berita",
+    rawTextPlaceholder: "Tempelkan seluruh isi artikel berita di sini... (Minimal 100 karakter)",
+    textTitlePlaceholder: "Masukkan judul berita (opsional, untuk memperjelas cetakan)...",
+    textSitePlaceholder: "Misal: Kompas, Detik, BBC, Tempo, dll (opsional)...",
+    errorKeyTitle: "Kunci API Gemini Belum Dikonfigurasi",
+    errorKeyText: "Aplikasi ini membutuhkan kunci API untuk melakukan dekonstruksi media menggunakan kecerdasan buatan Gemini. Silakan ikuti panduan rahasia di bawah.",
+    translateLabel: "Terjemahkan Analisis:",
+    translateSuccess: "Analisis berhasil diterjemahkan!",
+    translatingText: "Menerjemahkan...",
+    gnewsTabCurated: "Studi Kasus Kurasi (Offline)",
+    gnewsTabLive: "Google News Terkini (Real-time AI)",
+    gnewsLoadingText: "Menghubungi pusat telegraf Google News...",
+    gnewsReload: "Segarkan Berita",
+    gnewsAnalyzeTip: "Klik untuk menganalisis berita ini secara langsung menggunakan AI!",
+    explainerSays: "YANG DIKATAKAN BERITA",
+    explainerMissing: "YANG MUNGKIN TERLEWAT",
+    explainSummaryTitle: "Summary",
+    explainSummaryText: "Poin-poin utama dan pernyataan inti yang diekstrak secara objektif dari artikel berita.",
+    explainFramingTitle: "Source framing",
+    explainFramingText: "Analisis nada bahasa, gaya diksi, dan bias pembingkaian dari publikasi media.",
+    explainClaimsTitle: "Key claims",
+    explainClaimsText: "Argumen utama, data pendukung, deklarasi pusat, dan logika pembangun kasus.",
+    explainBlindSpotsTitle: "Blind spots",
+    explainBlindSpotsText: "Perspektif, fakta krusial, atau suara pemangku kepentingan yang diabaikan atau disembunyikan.",
+    explainContextTitle: "Global context",
+    explainContextText: "Bagaimana lanskap media internasional menyuarakan atau mengkontraskan narasi yang sama.",
+    explainQuestionsTitle: "Questions to ask",
+    explainQuestionsText: "Pertanyaan kritis, investigatif, pembedah celah logika yang belum diverifikasi.",
   },
   en: {
     title: "BIJAKBACA",
     tagline: "— ONE STORY, MULTIPLE PERSPECTIVES — READ WIDER, UNDERSTAND DEEPER —",
     volumeMark: "VOL. 01 / NO. 12",
     editorialNotice: "DEVOTED TO MEDIA LITERACY & COGNITIVE FREEDOM",
-    priceTag: "PRICE: CRITICAL INQUIRY",
+    priceTag: "PRICE : FREE",
     placeholder: "Paste news article URL here (https://...)...",
     buttonAnalyze: "Examine Article",
     buttonAnalyzing: "Printing...",
@@ -129,7 +165,39 @@ const TRANSLATIONS = {
         t: "3. Power Citizen Inquiry",
         d: "Generate sharp, deep-seated questions that help you challenge statements rather than accepting authority."
       }
-    ]
+    ],
+    tabUrl: "Web URL (Auto Scraper)",
+    tabText: "Copy-Paste Raw Text",
+    headlineLabel: "Article Title",
+    siteNameLabel: "Publisher / Publication Source",
+    rawTextLabel: "Article Content Text",
+    rawTextPlaceholder: "Paste the full body / text copy of the newspaper article here... (Minimum 100 characters)",
+    textTitlePlaceholder: "Enter news headline (optional)...",
+    textSitePlaceholder: "E.g. NYTimes, BBC, Al Jazeera, Reuters (optional)...",
+    errorKeyTitle: "Gemini API Key Missing",
+    errorKeyText: "This application requires a Gemini API Key to run real-time artificial intelligence deconstruction. Please see the secrets configuration instructions below.",
+    translateLabel: "Translate Analysis:",
+    translateSuccess: "Analysis translated successfully!",
+    translatingText: "Translating...",
+    gnewsTabCurated: "Offline Curated Cases",
+    gnewsTabLive: "Google News Hub (Real-time AI)",
+    gnewsLoadingText: "Pinging Google News telegraph station...",
+    gnewsReload: "Refresh News Feed",
+    gnewsAnalyzeTip: "Click to immediately analyze this live story with AI!",
+    explainerSays: "THE HEADLINE SAYS",
+    explainerMissing: "WHAT MIGHT BE MISSING",
+    explainSummaryTitle: "Summary",
+    explainSummaryText: "Key points and core assertions extracted from the article.",
+    explainFramingTitle: "Source framing",
+    explainFramingText: "Tone analysis and framing tendencies of the publication.",
+    explainClaimsTitle: "Key claims",
+    explainClaimsText: "Primary arguments, statements, and supporting logic.",
+    explainBlindSpotsTitle: "Blind spots",
+    explainBlindSpotsText: "Important perspectives or data left unmentioned in the piece.",
+    explainContextTitle: "Global context",
+    explainContextText: "How international outlets represent the same narrative.",
+    explainQuestionsTitle: "Questions to ask",
+    explainQuestionsText: "Critical inquiries to explore what was not verified or sourced.",
   }
 };
 
@@ -140,6 +208,12 @@ export default function App() {
   const [progressStep, setProgressStep] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   
+  // Custom Raw Text Mode states
+  const [inputMode, setInputMode] = useState<"url" | "text">("url");
+  const [rawText, setRawText] = useState("");
+  const [customHeadline, setCustomHeadline] = useState("");
+  const [customSiteName, setCustomSiteName] = useState("");
+
   // Current active report
   const [activeReport, setActiveReport] = useState<Report | null>(null);
   const [activeSourceUrl, setActiveSourceUrl] = useState<string | null>(null);
@@ -148,8 +222,84 @@ export default function App() {
   // History states
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translateFeedback, setTranslateFeedback] = useState<string | null>(null);
+
+  // Live updating West Indonesia Time (WIB) state
+  const [wibTime, setWibTime] = useState("");
+  const [wibDate, setWibDate] = useState("");
+
+  // Live Google News State
+  const [presetType, setPresetType] = useState<"curated" | "gnews">("gnews");
+  const [gnewsArticles, setGnewsArticles] = useState<any[]>([]);
+  const [gnewsLoading, setGnewsLoading] = useState(false);
+  const [gnewsError, setGnewsError] = useState<string | null>(null);
+
+  const fetchGoogleNews = async (silent = false) => {
+    if (!silent) setGnewsLoading(true);
+    setGnewsError(null);
+    try {
+      const res = await fetch(`/api/google-news?lang=${lang}`);
+      if (!res.ok) {
+        throw new Error("Telegraph carrier fault");
+      }
+      const data = await res.json();
+      setGnewsArticles(data);
+    } catch (err: any) {
+      console.error("Google News fetch failed:", err);
+      setGnewsError(lang === "id"
+        ? "Gagal memuat berita terbaru Google News. Hubungan dengan pos telegraf terputus."
+        : "Failed to fetch latest Google News. Connection to the telegraph station disrupted."
+      );
+    } finally {
+      if (!silent) setGnewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (presetType === "gnews") {
+      fetchGoogleNews();
+    }
+  }, [presetType, lang]);
+
+  const handleGnewsSelect = (newsItem: { title: string; url: string; siteName: string }) => {
+    setErrorMsg(null);
+    setInputMode("url");
+    setInputUrl(newsItem.url);
+    // Directly trigger live crawling and analysis!
+    handleLiveAnalysis(newsItem.url);
+  };
 
   const t = TRANSLATIONS[lang];
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      
+      const timeFormatter = new Intl.DateTimeFormat(lang === "id" ? "id-ID" : "en-US", {
+        timeZone: "Asia/Jakarta",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      });
+      
+      const dateFormatter = new Intl.DateTimeFormat(lang === "id" ? "id-ID" : "en-US", {
+        timeZone: "Asia/Jakarta",
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      });
+
+      setWibTime(timeFormatter.format(now));
+      setWibDate(dateFormatter.format(now).toUpperCase());
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [lang]);
 
   // Load history from localStorage on mount
   useEffect(() => {
@@ -239,39 +389,58 @@ export default function App() {
   };
 
   const handleLiveAnalysis = async (urlToAnalyze?: string) => {
-    const targetUrl = urlToAnalyze || inputUrl.trim();
-    if (!targetUrl) return;
-
-    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-      setErrorMsg(lang === "id" ? "Silakan masukkan alamat URL web yang sah dengan protokol https:// atau http://" : "Please input a valid web URL starting with https:// or http://");
-      return;
-    }
-
     setErrorMsg(null);
     setLoading(true);
     setIsPreset(false);
-    setActiveSourceUrl(targetUrl);
 
-    // Start loading stepper
-    let fetchDone = false;
-    let reportData: Report | null = null;
-    let serverError: string | null = null;
+    let targetUrl = urlToAnalyze || (inputMode === "url" ? inputUrl.trim() : "");
+    let bodyData: any = {};
 
-    startProgressSimulation(() => {
-      setLoading(false);
-      if (serverError) {
-        setErrorMsg(serverError);
-      } else if (reportData) {
-        setActiveReport(reportData);
-        addToHistory(targetUrl, reportData);
-        setTimeout(() => {
-          document.getElementById("newspaper-broadsheet")?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-        setInputUrl("");
-      } else {
-        setErrorMsg(lang === "id" ? "Mengalami kendala koneksi dengan pemroses telegraf. Silakan coba sebentar lagi." : "Connection failed while writing content. Please verify host and try again.");
+    if (inputMode === "text" && !urlToAnalyze) {
+      if (rawText.trim().length < 100) {
+        setErrorMsg(lang === "id" 
+          ? "Harap tempel teks yang cukup panjang (minimal 100 karakter) agar dapat dianalisa secara akurat." 
+          : "Please paste a sufficiently long article (minimum 100 characters) for accurate analysis."
+        );
+        setLoading(false);
+        return;
       }
-    });
+      bodyData = {
+        rawText: rawText.trim(),
+        headline: customHeadline.trim(),
+        siteName: customSiteName.trim(),
+        lang
+      };
+      setActiveSourceUrl("");
+    } else {
+      if (!targetUrl) {
+        setLoading(false);
+        return;
+      }
+      if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+        setErrorMsg(lang === "id" 
+          ? "Silakan masukkan alamat URL web yang sah dengan protokol https:// atau http://" 
+          : "Please input a valid web URL starting with https:// or http://"
+        );
+        setLoading(false);
+        return;
+      }
+      bodyData = { url: targetUrl, lang };
+      setActiveSourceUrl(targetUrl);
+    }
+
+    // Elegant synchronized stepper progress loading run
+    setProgressStep(0);
+    let currentStep = 0;
+    const intervalId = setInterval(() => {
+      if (currentStep < 6) {
+        currentStep += 1;
+        setProgressStep(currentStep);
+      }
+    }, 700);
+
+    let reportData: Report | null = null;
+    let serverError: any = null;
 
     try {
       const response = await fetch("/api/analyze", {
@@ -279,7 +448,7 @@ export default function App() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ url: targetUrl })
+        body: JSON.stringify(bodyData)
       });
 
       if (!response.ok) {
@@ -291,6 +460,42 @@ export default function App() {
     } catch (err: any) {
       console.error("API Fetch Error:", err);
       serverError = err?.message || "Internal server connection fault.";
+    } finally {
+      clearInterval(intervalId);
+      
+      if (serverError) {
+        setLoading(false);
+        setErrorMsg(serverError);
+      } else if (reportData) {
+        // Fast-forward visually to step 7
+        setProgressStep(7);
+        setTimeout(() => {
+          setActiveReport(reportData);
+          if (targetUrl) {
+            addToHistory(targetUrl, reportData);
+          } else {
+            // Manual text history entry
+            addToHistory("Laporan Tulisan: " + (customHeadline.trim() || reportData.headline.substring(0, 30)), reportData);
+          }
+          setLoading(false);
+          setErrorMsg(null);
+          setTimeout(() => {
+            document.getElementById("newspaper-broadsheet")?.scrollIntoView({ behavior: "smooth" });
+          }, 100);
+          
+          // Clear inputs on success
+          setInputUrl("");
+          setRawText("");
+          setCustomHeadline("");
+          setCustomSiteName("");
+        }, 850);
+      } else {
+        setLoading(false);
+        setErrorMsg(lang === "id" 
+          ? "Mengalami kendala koneksi dengan pemroses telegraf. Silakan coba sebentar lagi." 
+          : "Connection failed while writing content. Please verify host and try again."
+        );
+      }
     }
   };
 
@@ -326,6 +531,285 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
     });
+  };
+
+  const handleExportToPDF = () => {
+    if (!activeReport) return;
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    let currentY = 25;
+    const pageHeight = 297;
+    const pageWidth = 210;
+    const margin = 20;
+    const contentWidth = pageWidth - (margin * 2);
+
+    // Header generator on page creation / reset
+    const drawPageBordersAndHeader = (num: number) => {
+      // Elegant thick line at top
+      doc.setDrawColor(33, 37, 41);
+      doc.setLineWidth(0.6);
+      doc.line(margin, 12, pageWidth - margin, 12);
+      
+      // Thin secondary line under
+      doc.setLineWidth(0.2);
+      doc.line(margin, 13.5, pageWidth - margin, 13.5);
+
+      // Branded Header titles
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(139, 90, 43); // bronze
+      doc.text("BIJAKBACA — LAPORAN LITERASI MEDIA", margin, 9);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(120, 120, 120);
+      doc.text(`ID REPORT: #BB-${Math.abs(activeReport.headline.length * 17) % 1000}`, pageWidth - margin - 35, 9);
+
+      // Page footer boundary
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.25);
+      doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+      
+      doc.setFontSize(7.5);
+      doc.setTextColor(140, 140, 140);
+      doc.text(
+        lang === "id" 
+          ? "Dicetak lewat Bijakbaca — Dekonstruksi Berita & Pemecah Echo Chamber Independen." 
+          : "Compiled via Bijakbaca — Proportional Media Literacy & Echo Chamber Disruption.",
+        margin, 
+        pageHeight - 10
+      );
+      doc.text(`Halaman / Page ${num}`, pageWidth - margin - 22, pageHeight - 10);
+    };
+
+    let pageNum = 1;
+    drawPageBordersAndHeader(pageNum);
+
+    // Clean boundary helper to prevent cutoffs
+    const checkSpaceAndAddPage = (heightNeeded: number) => {
+      if (currentY + heightNeeded > pageHeight - 20) {
+        doc.addPage();
+        pageNum++;
+        drawPageBordersAndHeader(pageNum);
+        currentY = 24; // reset Y to top content level
+      }
+    };
+
+    // --- Broadside Masthead Banner ---
+    doc.setFont("times", "bold");
+    doc.setFontSize(26);
+    doc.setTextColor(33, 37, 41);
+    doc.text("BIJAKBACA", margin, currentY);
+    currentY += 6;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(139, 90, 43); // bronze label
+    doc.text(lang === "id" ? "— SATU BERITA, BERAGAM SUDUT PANDANG — BACA LEBIH LUAS, PAHAMI LEBIH DALAM —" : "— ONE STORY, MULTIPLE PERSPECTIVES — READ WIDER, UNDERSTAND DEEPER —", margin, currentY);
+    currentY += 5;
+
+    // Bold dividing ruler
+    doc.setDrawColor(33, 37, 41);
+    doc.setLineWidth(0.6);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 7;
+
+    // --- Metadata Information Table Box ---
+    doc.setFillColor(249, 248, 245); // light cream newspaper bg
+    doc.rect(margin, currentY, contentWidth, 16, "F");
+    doc.setDrawColor(190, 185, 175);
+    doc.setLineWidth(0.2);
+    doc.rect(margin, currentY, contentWidth, 16, "S");
+
+    // Labels
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(120, 120, 120);
+    doc.text(lang === "id" ? "SECTOR A / PENERBIT ASAL:" : "SECTOR A / SOURCE PUBLISHER:", margin + 5, currentY + 5.5);
+    doc.text(lang === "id" ? "SECTOR B / WAKTU DEKONSTRUKSI:" : "SECTOR B / DECONSTRUCTION TIME:", margin + contentWidth / 2 + 5, currentY + 5.5);
+
+    // Values
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(33, 37, 41);
+    doc.text(activeReport.sourceName, margin + 5, currentY + 11);
+    doc.text(wibDate || new Date().toLocaleDateString(lang === "id" ? "id" : "en"), margin + contentWidth / 2 + 5, currentY + 11);
+    currentY += 22;
+
+    // --- Article Headline (in elegant Georgia/Times-Bold italic styled text) ---
+    checkSpaceAndAddPage(15);
+    doc.setFont("times", "bolditalic");
+    doc.setFontSize(14.5);
+    doc.setTextColor(40, 40, 40);
+    
+    const wrapperTitle = `"${activeReport.headline}"`;
+    const titleLines = doc.splitTextToSize(wrapperTitle, contentWidth);
+    titleLines.forEach((line: string) => {
+      checkSpaceAndAddPage(6);
+      doc.text(line, margin, currentY);
+      currentY += 6;
+    });
+    currentY += 4;
+
+    // Thick dividing ruler for the real analysis body content
+    checkSpaceAndAddPage(5);
+    doc.setDrawColor(139, 90, 43); // bronze
+    doc.setLineWidth(0.4);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 8;
+
+    // Standard section renderer
+    const printPdfSection = (secHeader: string, textBody: string, isHighlighted = false) => {
+      checkSpaceAndAddPage(14);
+      
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      if (isHighlighted) {
+        doc.setTextColor(139, 90, 43); // use bronze accent
+      } else {
+        doc.setTextColor(33, 37, 41);
+      }
+      doc.text(secHeader.toUpperCase(), margin, currentY);
+      currentY += 4;
+
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.2);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 6;
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(60, 60, 60);
+
+      const splitText = doc.splitTextToSize(textBody, contentWidth);
+      splitText.forEach((line: string) => {
+        checkSpaceAndAddPage(5.5);
+        doc.text(line, margin, currentY);
+        currentY += 5.5;
+      });
+      currentY += 5; // bottom margin
+    };
+
+    // Standard list items renderer (for key claims & critical inquiries)
+    const printPdfListSection = (secHeader: string, itemsList: string[], isQMark = false) => {
+      checkSpaceAndAddPage(14);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(33, 37, 41);
+      doc.text(secHeader.toUpperCase(), margin, currentY);
+      currentY += 4;
+
+      doc.setDrawColor(210, 210, 210);
+      doc.setLineWidth(0.2);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 6;
+
+      itemsList.forEach((listItemText, index) => {
+        const bulletBadge = isQMark ? "[?] " : `[${index + 1}] `;
+        
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(139, 90, 43); // bronze bullet
+        const badgeWidth = doc.getTextWidth(bulletBadge) + 3;
+
+        const splitLine = doc.splitTextToSize(listItemText, contentWidth - badgeWidth);
+        const neededHt = (splitLine.length * 5.5) + 3;
+        
+        checkSpaceAndAddPage(neededHt);
+
+        // Print bullet
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(139, 90, 43);
+        doc.text(bulletBadge, margin, currentY);
+
+        // Print text body
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(60, 60, 60);
+
+        splitLine.forEach((lineContent: string) => {
+          doc.text(lineContent, margin + badgeWidth, currentY);
+          currentY += 5.5;
+        });
+        currentY += 2.5; // space between bullets
+      });
+      currentY += 4;
+    };
+
+    // --- Content Outputs ---
+    
+    // Panel A: Conventual Narration
+    printPdfSection(t.labelSummary, activeReport.summary, false);
+    printPdfSection(t.labelFraming, activeReport.framing, false);
+    printPdfListSection(t.labelClaims, activeReport.claims, false);
+
+    // Panel B: What is omitted / beyond
+    printPdfSection(t.labelBlindSpots, activeReport.blindSpots, true);
+    printPdfSection(t.labelGlobalContext, activeReport.globalContext, false);
+    printPdfListSection(t.labelQuestions, activeReport.criticalQuestions, true);
+
+    // Trigger PDF browser-download save task
+    const stampFile = activeReport.headline
+      .toLowerCase()
+      .replace(/[^a-z0-9]/gi, "_")
+      .slice(0, 30);
+    doc.save(`Bijakbaca_Deconstruction_${stampFile}.pdf`);
+  };
+
+  const handleTranslateReport = async (targetLang: "id" | "en") => {
+    if (!activeReport || translating) return;
+    setTranslating(true);
+    setTranslateFeedback(lang === "id" ? "Menghubungi pemroses telegraf..." : "Contacting telegraph processor...");
+
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          report: activeReport,
+          targetLang
+        })
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson?.error || `API returned status ${response.status}`);
+      }
+
+      const translatedReport = await response.json();
+      setActiveReport(translatedReport);
+      
+      // Update global language context to match the translated report language
+      setLang(targetLang);
+
+      setTranslateFeedback(targetLang === "id" ? "Analisis berhasil diterjemahkan!" : "Analysis translated successfully!");
+      setTimeout(() => setTranslateFeedback(null), 3000);
+    } catch (err: any) {
+      console.error("Translation Client Error:", err);
+      const msg = err?.message || "";
+      if (msg.includes("GEMINI_API_KEY") || msg.includes("Kunci API")) {
+        setErrorMsg(lang === "id" 
+          ? "Kunci API Gemini Belum Dikonfigurasi. Fitur terjemahan otomatis membutuhkan pengaturan API Key." 
+          : "Gemini API Key Missing. The automatic translation feature requires an API key setup."
+        );
+        setTimeout(() => {
+          document.getElementById("error-bulletin")?.scrollIntoView({ behavior: "smooth" });
+        }, 120);
+      } else {
+        alert(lang === "id" ? `Gagal menerjemahkan: ${msg}` : `Failed to translate: ${msg}`);
+      }
+      setTranslateFeedback(null);
+    } finally {
+      setTranslating(false);
+    }
   };
 
   return (
@@ -368,13 +852,9 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
         </div>
 
         {/* Dynamic Grand Newspaper Masthead Logo */}
-        <div className="text-center py-6 select-none relative overflow-visible">
+        <div className="text-center py-6 select-none relative overflow-visible flex flex-col items-center justify-center">
           <h1 className="font-serif font-black text-5xl md:text-7xl lg:text-8xl tracking-tighter text-charcoal-900 drop-shadow-sm filter contrast-175 relative inline-block">
             {t.title}
-            {/* Ink bleed accent */}
-            <span className="absolute -bottom-1 -right-2 text-xs font-serif font-normal italic text-bronze-500 transform rotate-12 select-none">
-              v1.2
-            </span>
           </h1>
           <p className="font-serif text-xs md:text-sm tracking-widest text-bronze-800 mt-2 font-bold uppercase">
             {t.tagline}
@@ -384,16 +864,16 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
         {/* Sub-masthead Info Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center text-[10px] font-mono tracking-wider text-charcoal-700 select-none pt-2.5 pb-2 border-t border-b-2 border-charcoal-900 text-xs mt-2">
           <div className="border-r border-paper-300">
-            {lang === "id" ? "JUMAT, 29 MEI 2026" : "FRIDAY, MAY 29, 2026"}
+            {wibDate || (lang === "id" ? "JUMAT, 29 MEI 2026" : "FRIDAY, MAY 29, 2026")}
           </div>
-          <div className="border-r border-paper-300 hidden md:block">
-            {lang === "id" ? "WAKTU BACA AKTIF" : "CRITICAL INQUIRY ENGAGED"}
+          <div className="border-r border-paper-300 hidden md:block text-bronze-800 font-bold">
+            {wibTime || (lang === "id" ? "MEMUAT JAM..." : "LOADING CLOCK...")}
           </div>
           <div className="border-r border-paper-300">
             {t.priceTag}
           </div>
           <div>
-            GMT/UTC +00:00
+            WIB / GMT+07:00
           </div>
         </div>
       </header>
@@ -406,54 +886,160 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
           {/* Subtle vintage watermark backgrounds */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-bronze-200 rounded-full opacity-10 filter blur-xl pointer-events-none"></div>
           
-          <div className="flex items-center gap-2 text-xs text-bronze-800 font-bold uppercase tracking-widest mb-3">
-            <Feather className="w-4 h-4 text-bronze-500" />
-            <span>{lang === "id" ? "Telegraf Masukan URL" : "News URL Input Terminal"}</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-paper-200 pb-4 mb-5">
+            <div className="flex items-center gap-2 text-xs text-bronze-800 font-bold uppercase tracking-widest">
+              <Feather className="w-4 h-4 text-bronze-500" />
+              <span>{lang === "id" ? "Terminal Dekonstruksi Berita" : "News Inquiry Terminal"}</span>
+            </div>
+
+            {/* In-Panel Mode Switcher (Tabs) */}
+            <div className="flex items-center gap-1 bg-paper-200 p-1 rounded-lg border border-paper-300 self-start sm:self-auto font-mono text-[10px]">
+              <button
+                type="button"
+                onClick={() => setInputMode("url")}
+                className={`px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                  inputMode === "url"
+                    ? "bg-bronze-800 text-paper-50 shadow"
+                    : "text-charcoal-700 hover:text-charcoal-900"
+                }`}
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>{t.tabUrl}</span>
+              </button>
+              <button
+                type="button"
+                className={`px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                  inputMode === "text"
+                    ? "bg-bronze-800 text-paper-50 shadow"
+                    : "text-charcoal-700 hover:text-charcoal-900"
+                }`}
+                onClick={() => setInputMode("text")}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>{t.tabText}</span>
+              </button>
+            </div>
           </div>
 
-          <p className="text-sm font-sans text-charcoal-900 mb-5 leading-relaxed">
-            {t.explainPrompt}
+          <p className="text-xs font-sans text-charcoal-700 mb-5 leading-relaxed">
+            {inputMode === "url" ? t.explainPrompt : (lang === "id" 
+              ? "Cara terbaik jika URL diblokir (Cloudflare/paywall): Salin seluruh teks utama dari halaman berita, lalu tempelkan di bawah untuk langsung kami dekonstruksi menggunakan AI." 
+              : "The gold standard if news URLs block scrapers: Simply highlight, copy, and paste the full article text body directly below.")}
           </p>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleLiveAnalysis();
-            }}
-            className="flex flex-col sm:flex-row gap-3"
-          >
-            <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-700" />
-              <input
-                id="news-url-input"
-                type="text"
-                placeholder={t.placeholder}
-                value={inputUrl}
-                onChange={(e) => setInputUrl(e.target.value)}
-                disabled={loading}
-                className="w-full bg-paper-50 text-charcoal-900 pl-11 pr-4 py-3.5 rounded-lg border border-paper-300 focus:outline-none focus:ring-2 focus:ring-bronze-500 text-sm font-sans placeholder:italic placeholder:text-gray-400 shadow-inner transition-shadow"
-              />
-            </div>
-            
-            <button
-              id="analyze-submit-btn"
-              type="submit"
-              disabled={loading || !inputUrl.trim()}
-              className="px-6 py-3.5 bg-bronze-800 hover:bg-bronze-500 disabled:bg-paper-300 text-paper-50 rounded-lg text-sm font-mono tracking-wider font-bold shadow-md transition-all uppercase flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+          {inputMode === "url" ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleLiveAnalysis();
+              }}
+              className="flex flex-col sm:flex-row gap-3"
             >
-              {loading ? (
-                <>
-                  <span className="animate-spin w-4 h-4 border-2 border-paper-50 border-t-transparent rounded-full"></span>
-                  <span>{t.buttonAnalyzing}</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>{t.buttonAnalyze}</span>
-                </>
-              )}
-            </button>
-          </form>
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-charcoal-700" />
+                <input
+                  id="news-url-input"
+                  type="text"
+                  placeholder={t.placeholder}
+                  value={inputUrl}
+                  onChange={(e) => setInputUrl(e.target.value)}
+                  disabled={loading}
+                  className="w-full bg-paper-50 text-charcoal-900 pl-11 pr-4 py-3.5 rounded-lg border border-paper-300 focus:outline-none focus:ring-2 focus:ring-bronze-500 text-sm font-sans placeholder:italic placeholder:text-gray-400 shadow-inner transition-shadow"
+                />
+              </div>
+              
+              <button
+                id="analyze-submit-btn"
+                type="submit"
+                disabled={loading || !inputUrl.trim()}
+                className="px-6 py-3.5 bg-bronze-800 hover:bg-bronze-500 disabled:bg-paper-300 text-paper-50 rounded-lg text-sm font-mono tracking-wider font-bold shadow-md transition-all uppercase flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <span className="animate-spin w-4 h-4 border-2 border-paper-50 border-t-transparent rounded-full"></span>
+                    <span>{t.buttonAnalyzing}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>{t.buttonAnalyze}</span>
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleLiveAnalysis();
+              }}
+              className="space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono uppercase text-bronze-800 font-bold block select-none">
+                    {t.headlineLabel}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={t.textTitlePlaceholder}
+                    value={customHeadline}
+                    onChange={(e) => setCustomHeadline(e.target.value)}
+                    disabled={loading}
+                    className="w-full bg-paper-50 text-charcoal-900 px-3.5 py-2.5 rounded-lg border border-paper-300 focus:outline-none focus:ring-2 focus:ring-bronze-500 text-xs font-sans placeholder:italic placeholder:text-gray-400 shadow-inner"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono uppercase text-bronze-800 font-bold block select-none">
+                    {t.siteNameLabel}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder={t.textSitePlaceholder}
+                    value={customSiteName}
+                    onChange={(e) => setCustomSiteName(e.target.value)}
+                    disabled={loading}
+                    className="w-full bg-paper-50 text-charcoal-900 px-3.5 py-2.5 rounded-lg border border-paper-300 focus:outline-none focus:ring-2 focus:ring-bronze-500 text-xs font-sans placeholder:italic placeholder:text-gray-400 shadow-inner"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-mono uppercase text-bronze-800 font-bold block select-none">
+                  {t.rawTextLabel} <span className="text-red-500 font-bold">*</span>
+                </label>
+                <textarea
+                  placeholder={t.rawTextPlaceholder}
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  disabled={loading}
+                  rows={5}
+                  className="w-full bg-paper-50 text-charcoal-900 px-3.5 py-3 rounded-lg border border-paper-300 focus:outline-none focus:ring-2 focus:ring-bronze-500 text-xs font-sans placeholder:italic placeholder:text-gray-400 shadow-inner resize-y min-h-[120px]"
+                />
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <button
+                  id="analyze-submit-text-btn"
+                  type="submit"
+                  disabled={loading || rawText.trim().length < 100}
+                  className="px-6 py-3 bg-bronze-800 hover:bg-bronze-500 disabled:bg-paper-300 text-paper-50 rounded-lg text-sm font-mono tracking-wider font-bold shadow-md transition-all uppercase flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <span className="animate-spin w-4 h-4 border-2 border-paper-50 border-t-transparent rounded-full"></span>
+                      <span>{t.buttonAnalyzing}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>{t.buttonAnalyze}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* Quick Core Values */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-4 border-t border-paper-200 text-[11px] font-mono text-charcoal-700">
@@ -467,67 +1053,131 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
           </div>
         </div>
 
-        {/* Curated Preloaded Cases Box */}
-        <div id="presets-panel" className="mb-12">
-          <div className="flex items-center justify-between border-b-2 border-charcoal-900 pb-2 mb-4">
-            <h3 className="font-serif italic text-lg text-charcoal-900 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-bronze-500" />
-              <span>{t.presetHeader}</span>
-            </h3>
-            <span className="font-mono text-xs text-charcoal-700 bg-paper-200 px-2 py-0.5 rounded border border-paper-300 select-none uppercase">
-              {lang === "id" ? "Bebas Kuota AI" : "No AI consumption required"}
-            </span>
-          </div>
+        {/* Onboarding / Website Functions Explainer Card */}
+        {!activeReport && !loading && (
+          <div className="bg-paper-100 border border-paper-300 rounded-2xl p-6 md:p-8 mb-12 shadow-sm transition-all relative overflow-hidden" id="features-explainer-card">
+            {/* Subtle vertical dashed divider in center */}
+            <div className="absolute left-1/2 top-10 bottom-10 w-[2px] border-l border-dashed border-paper-300 -translate-x-1/2 hidden lg:block select-none pointer-events-none"></div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {PRESET_ARTICLES.map((article) => {
-              const r = article.reports[lang];
-              const isSelected = activeSourceUrl === article.url;
-
-              return (
-                <button
-                  key={article.id}
-                  onClick={() => handlePresetSelect(article)}
-                  className={`text-left self-stretch p-5 bg-paper-100 rounded-lg border transition-all duration-200 flex flex-col justify-between group shadow-sm hover:shadow-md cursor-pointer relative overflow-hidden ${
-                    isSelected 
-                      ? "border-bronze-800 bg-bronze-50 ring-2 ring-bronze-500/30" 
-                      : "border-paper-300 hover:border-bronze-800"
-                  }`}
-                >
-                  {/* Category Stamp */}
-                  <div className="flex items-center justify-between text-[10px] font-mono tracking-widest uppercase mb-3">
-                    <span className="text-bronze-500 font-bold block">
-                      ◆ {article.category}
-                    </span>
-                    <span className="text-charcoal-700 group-hover:text-bronze-800">
-                      {article.siteName}
-                    </span>
-                  </div>
-
-                  <h4 className="font-serif font-bold text-sm text-charcoal-900 mb-3 group-hover:text-bronze-800 leading-snug">
-                    {article.title}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start relative z-10">
+              
+              {/* Left Column: The Headline Says */}
+              <div className="space-y-6">
+                <div className="text-center lg:text-left select-none">
+                  <h4 className="font-mono text-[11px] font-bold tracking-widest text-bronze-500 uppercase">
+                    {t.explainerSays}
                   </h4>
+                </div>
 
-                  <p className="text-xs text-charcoal-700 line-clamp-3 mb-4 leading-relaxed italic">
-                    "{r.summary}"
-                  </p>
-
-                  <div className="flex items-center gap-1.5 text-[11px] font-mono text-bronze-800 mt-auto pt-2 border-t border-paper-100 uppercase tracking-wider">
-                    <span>{lang === "id" ? "Muat Analisa" : "Load Report"}</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <div className="space-y-4">
+                  {/* Summary Section */}
+                  <div className="bg-paper-50/70 hover:bg-paper-50 p-4 rounded-xl border border-paper-200 transition-all duration-300 hover:shadow-sm hover:border-bronze-500/30 flex gap-4 cursor-default group">
+                    <div className="w-10 h-10 rounded-lg bg-bronze-50 flex items-center justify-center flex-shrink-0 border border-bronze-200/50 group-hover:bg-bronze-100/50 transition-colors">
+                      <FileText className="w-5 h-5 text-bronze-800" />
+                    </div>
+                    <div>
+                      <h5 className="font-serif font-black text-sm text-charcoal-900 group-hover:text-bronze-800 transition-colors">
+                        {t.explainSummaryTitle}
+                      </h5>
+                      <p className="text-xs text-charcoal-700 leading-relaxed mt-1">
+                        {t.explainSummaryText}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Stamp mark indicating instantaneous reading */}
-                  {isSelected && (
-                    <div className="absolute -top-3 -right-3 w-12 h-12 bg-bronze-500 text-paper-50 rounded-full flex items-center justify-center transform rotate-12 select-none shadow border border-paper-900">
-                      <span className="text-[8px] font-mono font-bold tracking-tighter uppercase">ACTIVE</span>
+                  {/* Source Framing Section */}
+                  <div className="bg-paper-50/70 hover:bg-paper-50 p-4 rounded-xl border border-paper-200 transition-all duration-300 hover:shadow-sm hover:border-bronze-500/30 flex gap-4 cursor-default group">
+                    <div className="w-10 h-10 rounded-lg bg-bronze-50 flex items-center justify-center flex-shrink-0 border border-bronze-200/50 group-hover:bg-bronze-100/50 transition-colors">
+                      <Compass className="w-5 h-5 text-bronze-800" />
                     </div>
-                  )}
-                </button>
-              );
-            })}
+                    <div>
+                      <h5 className="font-serif font-black text-sm text-charcoal-900 group-hover:text-bronze-800 transition-colors">
+                        {t.explainFramingTitle}
+                      </h5>
+                      <p className="text-xs text-charcoal-700 leading-relaxed mt-1">
+                        {t.explainFramingText}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Key Claims Section */}
+                  <div className="bg-paper-50/70 hover:bg-paper-50 p-4 rounded-xl border border-paper-200 transition-all duration-300 hover:shadow-sm hover:border-bronze-500/30 flex gap-4 cursor-default group">
+                    <div className="w-10 h-10 rounded-lg bg-bronze-50 flex items-center justify-center flex-shrink-0 border border-bronze-200/50 group-hover:bg-bronze-100/50 transition-colors">
+                      <Layers className="w-5 h-5 text-bronze-800" />
+                    </div>
+                    <div>
+                      <h5 className="font-serif font-black text-sm text-charcoal-900 group-hover:text-bronze-800 transition-colors">
+                        {t.explainClaimsTitle}
+                      </h5>
+                      <p className="text-xs text-charcoal-700 leading-relaxed mt-1">
+                        {t.explainClaimsText}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: What Might Be Missing */}
+              <div className="space-y-6">
+                <div className="text-center lg:text-left select-none">
+                  <h4 className="font-mono text-[11px] font-bold tracking-widest text-[#a855f7] uppercase">
+                    {t.explainerMissing}
+                  </h4>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Blindspots Section */}
+                  <div className="bg-paper-50/70 hover:bg-paper-50 p-4 rounded-xl border border-paper-200 transition-all duration-300 hover:shadow-sm hover:border-purple-200 flex gap-4 cursor-default group">
+                    <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0 border border-purple-200/50 group-hover:bg-purple-100/50 transition-colors">
+                      <EyeOff className="w-5 h-5 text-purple-800" />
+                    </div>
+                    <div>
+                      <h5 className="font-serif font-black text-sm text-charcoal-900 group-hover:text-purple-800 transition-colors">
+                        {t.explainBlindSpotsTitle}
+                      </h5>
+                      <p className="text-xs text-charcoal-700 leading-relaxed mt-1">
+                        {t.explainBlindSpotsText}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Global Context Section */}
+                  <div className="bg-paper-50/70 hover:bg-paper-50 p-4 rounded-xl border border-paper-200 transition-all duration-300 hover:shadow-sm hover:border-purple-200 flex gap-4 cursor-default group">
+                    <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0 border border-purple-100/50 transition-colors">
+                      <Globe className="w-5 h-5 text-purple-800" />
+                    </div>
+                    <div>
+                      <h5 className="font-serif font-black text-sm text-charcoal-900 group-hover:text-purple-800 transition-colors">
+                        {t.explainContextTitle}
+                      </h5>
+                      <p className="text-xs text-charcoal-700 leading-relaxed mt-1">
+                        {t.explainContextText}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Questions to Ask Section */}
+                  <div className="bg-paper-50/70 hover:bg-paper-50 p-4 rounded-xl border border-paper-200 transition-all duration-300 hover:shadow-sm hover:border-purple-200 flex gap-4 cursor-default group">
+                    <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0 border border-purple-100/50 transition-colors">
+                      <HelpCircle className="w-5 h-5 text-purple-800" />
+                    </div>
+                    <div>
+                      <h5 className="font-serif font-black text-sm text-charcoal-900 group-hover:text-purple-800 transition-colors">
+                        {t.explainQuestionsTitle}
+                      </h5>
+                      <p className="text-xs text-charcoal-700 leading-relaxed mt-1">
+                        {t.explainQuestionsText}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
           </div>
-        </div>
+        )}
+
+
 
         {/* Transition Loading Box */}
         {loading && (
@@ -538,25 +1188,66 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
 
         {/* Error telegraph box */}
         {errorMsg && (
-          <div className="max-w-xl mx-auto my-12 bg-red-50 border-4 border-dashed border-red-700 rounded-xl p-6 text-center shadow-lg relative" id="error-bulletin">
+          <div className="max-w-2xl mx-auto my-12 bg-red-50/90 border-4 border-dashed border-red-700 rounded-xl p-6 text-center shadow-lg relative" id="error-bulletin">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-700 text-paper-50 px-4 py-1.5 rounded-full font-mono text-xs font-bold tracking-widest uppercase flex items-center gap-1">
               <AlertTriangle className="w-4 h-4" />
-              <span>{t.errorHeader}</span>
+              <span>{errorMsg.includes("GEMINI_API_KEY") ? t.errorKeyTitle : t.errorHeader}</span>
             </div>
 
             <div className="pt-2">
-              <p className="text-sm font-sans text-red-900 mb-6 font-bold leading-relaxed">
-                {errorMsg}
-              </p>
+              {errorMsg.includes("GEMINI_API_KEY") ? (
+                <div className="text-left space-y-4 text-charcoal-900">
+                  <p className="text-sm font-sans font-bold text-red-950 text-center leading-relaxed">
+                    {t.errorKeyText}
+                  </p>
+                  
+                  <div className="bg-paper-100 p-4 border border-red-300 rounded font-mono text-xs space-y-3 leading-relaxed text-charcoal-700">
+                    <p className="font-bold border-b border-paper-300 pb-1 uppercase tracking-wider text-red-700">
+                      📜 PETUNJUK KONFIGURASI / TECHNICAL TELETYPE MANUAL:
+                    </p>
+                    <ol className="list-decimal list-inside space-y-1">
+                      <li>
+                        {lang === "id" 
+                          ? "Temukan ikon roda gigi (Settings / Aturan) di panel antarmuka AI Studio Anda." 
+                          : "Locate the gear icon (Settings) inside your AI Studio Workspace interface."}
+                      </li>
+                      <li>
+                        {lang === "id" 
+                          ? "Masuk ke menu 'Secrets' atau 'Environment Variables'." 
+                          : "Navigate to the 'Secrets' or 'Environment Variables' tab."}
+                      </li>
+                      <li>
+                        {lang === "id" 
+                          ? "Tambahkan nama variabel baru: GEMINI_API_KEY" 
+                          : "Add a new variable with the exact name: GEMINI_API_KEY"}
+                      </li>
+                      <li>
+                        {lang === "id" 
+                          ? "Isi nilainya dengan Kunci API Gemini Anda dari Google AI Studio." 
+                          : "Paste your valid Gemini API Key from Google AI Studio as the value."}
+                      </li>
+                      <li>
+                        {lang === "id" 
+                          ? "Simpan setelan Anda untuk mengaktifkan koneksi telegraf!" 
+                          : "Save your settings to restore standard teletype connection!"}
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm font-sans text-red-900 mb-6 font-bold leading-relaxed">
+                  {errorMsg}
+                </p>
+              )}
 
-              <div className="border-t border-red-200 pt-5 mt-3 text-xs text-charcoal-700">
+              <div className="border-t border-red-200 pt-5 mt-6 text-xs text-charcoal-700">
                 <p className="mb-4 italic">{t.orTryPreset}</p>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {PRESET_ARTICLES.map((art) => (
                     <button
                       key={art.id}
                       onClick={() => handlePresetSelect(art)}
-                      className="bg-white border border-paper-300 hover:border-bronze-500 text-charcoal-900 px-3 py-1.5 rounded text-xs font-mono font-medium transition-all"
+                      className="bg-paper-200 border border-paper-300 hover:border-bronze-500 text-charcoal-900 px-3 py-1.5 rounded text-xs font-mono font-medium transition-all hover:bg-paper-300"
                     >
                       {art.siteName}
                     </button>
@@ -564,18 +1255,29 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
                 </div>
               </div>
 
-              <button
-                onClick={() => {
-                  setErrorMsg(null);
-                  if (activeSourceUrl) {
-                    handleLiveAnalysis(activeSourceUrl);
-                  }
-                }}
-                className="mt-6 px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded font-mono text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-2 mx-auto"
-              >
-                <RotateCcw className="w-4 h-4" />
-                <span>{t.retryBtn}</span>
-              </button>
+              {!errorMsg.includes("GEMINI_API_KEY") ? (
+                <button
+                  onClick={() => {
+                    setErrorMsg(null);
+                    if (activeSourceUrl) {
+                      handleLiveAnalysis(activeSourceUrl);
+                    }
+                  }}
+                  className="mt-6 px-6 py-2.5 bg-red-700 hover:bg-red-800 text-white rounded font-mono text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-2 mx-auto"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>{t.retryBtn}</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setErrorMsg(null);
+                  }}
+                  className="mt-6 px-6 py-2.5 bg-bronze-800 hover:bg-bronze-500 text-white rounded font-mono text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-2 mx-auto"
+                >
+                  <span>OK, PAHAM / UNDERSTOOD</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -589,8 +1291,31 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 30 }}
               transition={{ duration: 0.5 }}
-              className="bg-white border-8 border-charcoal-900 p-4 md:p-8 rounded-lg shadow-2xl relative max-w-5xl mx-auto my-12 overflow-hidden"
+              className="bg-paper-100 border-8 border-charcoal-900 p-4 md:p-8 rounded-lg shadow-2xl relative max-w-5xl mx-auto my-12 overflow-hidden"
             >
+              {activeReport.isSimulated && (
+                <div className="mb-6 bg-amber-50/95 border-l-4 border-amber-600 rounded-r-lg p-4 font-mono text-xs text-amber-900 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-3" id="simulated-warning-banner">
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse mt-1.5 flex-shrink-0"></span>
+                    <div>
+                      <span className="font-bold block text-amber-950 uppercase tracking-wide">
+                        {lang === "id" ? "⚠️ MODE BACKUP HEURISTIK AKTIF" : "⚠️ HEURISTIC COGNITIVE BACKUP IN USE"}
+                      </span>
+                      <p className="text-[11px] text-amber-900/90 leading-relaxed mt-0.5 max-w-2xl font-sans">
+                        {lang === "id" 
+                          ? "Batas kuota harian API Gemini global telah tercapai (429). Agar aplikasi Perspectra tetap dapat berfungsi tanpa interupsi, mesin analisis kami beralih otomatis ke mode heuristik luring mendalam." 
+                          : "The global Gemini API key has exceeded its rate limit (429). To ensure uninterrupted access, the system has automatically activated its offline deep heuristic fallback processor."}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] bg-amber-200/60 border border-amber-500/20 px-2.5 py-1 rounded-[4px] self-start md:self-auto font-mono text-amber-950 max-w-xs leading-tight">
+                    {lang === "id" 
+                      ? "Hubungkan Kunci API di Pengaturan untuk AI penuh" 
+                      : "Add your personal key in Settings for full AI powers"}
+                  </div>
+                </div>
+              )}
+
               {/* Retro broadsheet print header markings */}
               <div className="flex items-center justify-between border-b-2 border-dashed border-charcoal-700 pb-3 mb-6 select-none font-mono text-xs text-charcoal-700">
                 <div className="flex items-center gap-2">
@@ -623,7 +1348,49 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Inline Translation Tool */}
+                  <div className="flex items-center gap-1.5 bg-paper-200 p-1 rounded border border-paper-300 text-xs font-mono">
+                    {translating ? (
+                      <div className="px-2 py-0.5 text-[10px] text-bronze-800 animate-pulse flex items-center gap-1 font-bold whitespace-nowrap">
+                        <span className="animate-spin w-3 h-3 border-2 border-bronze-800 border-t-transparent rounded-full inline-block"></span>
+                        <span>{t.translatingText}</span>
+                      </div>
+                    ) : translateFeedback ? (
+                      <div className="px-2 py-0.5 text-[10px] text-emerald-700 font-bold animate-bounce whitespace-nowrap">
+                        {translateFeedback}
+                      </div>
+                    ) : (
+                      <span className="text-charcoal-700 font-bold uppercase tracking-tight text-[10px] px-1.5 hidden md:inline select-none">
+                        {t.translateLabel}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => handleTranslateReport("id")}
+                      disabled={translating}
+                      title="Terjemahkan laporan ke Bahasa Indonesia"
+                      className={`px-2 py-1 text-[10px] rounded transition-all cursor-pointer font-bold ${
+                        lang === "id"
+                          ? "bg-bronze-800 text-paper-50 shadow-sm"
+                          : "text-charcoal-700 hover:text-charcoal-900 hover:bg-paper-300"
+                      } ${translating ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      🇮🇩 ID
+                    </button>
+                    <button
+                      onClick={() => handleTranslateReport("en")}
+                      disabled={translating}
+                      title="Translate report to English"
+                      className={`px-2 py-1 text-[10px] rounded transition-all cursor-pointer font-bold ${
+                        lang === "en"
+                          ? "bg-bronze-800 text-paper-50 shadow-sm"
+                          : "text-charcoal-700 hover:text-charcoal-900 hover:bg-paper-300"
+                      } ${translating ? "opacity-50 cursor-not-allowed" : ""}`}
+                    >
+                      🇬🇧 EN
+                    </button>
+                  </div>
+
                   <button
                     onClick={handleCopyReport}
                     className="px-4 py-2 bg-paper-200 hover:bg-paper-300 border border-paper-300 rounded text-xs font-mono font-bold tracking-wider text-charcoal-700 uppercase flex items-center gap-1.5 transition-all select-none cursor-pointer"
@@ -639,6 +1406,14 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
                         <span>{t.copyBtn}</span>
                       </>
                     )}
+                  </button>
+
+                  <button
+                    onClick={handleExportToPDF}
+                    className="px-4 py-2 bg-paper-200 hover:bg-paper-300 border border-paper-300 rounded text-xs font-mono font-bold tracking-wider text-charcoal-700 uppercase flex items-center gap-1.5 transition-all select-none cursor-pointer"
+                  >
+                    <FileDown className="w-3.5 h-3.5 text-bronze-800" />
+                    <span>{lang === "id" ? "Ekspor PDF" : "Export PDF"}</span>
                   </button>
 
                   <button
@@ -834,7 +1609,7 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
                       document.getElementById("newspaper-broadsheet")?.scrollIntoView({ behavior: "smooth" });
                     }, 100);
                   }}
-                  className={`p-4 bg-white rounded-lg border cursor-pointer select-none transition-all group flex flex-col justify-between hover:border-bronze-800 hover:shadow-sm ${
+                  className={`p-4 bg-paper-100 rounded-lg border cursor-pointer select-none transition-all group flex flex-col justify-between hover:border-bronze-800 hover:shadow-sm ${
                     activeSourceUrl === item.url 
                       ? "border-bronze-800 bg-bronze-50/30" 
                       : "border-paper-200"
@@ -860,7 +1635,7 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
                     <button
                       onClick={(e) => deleteHistoryItem(item.id, e)}
                       title={lang === "id" ? "Hapus riwayat" : "Remove entry"}
-                      className="text-gray-400 hover:text-red-700 hover:bg-neutral-100 p-1 rounded transition-colors"
+                      className="text-gray-400 hover:text-red-700 hover:bg-paper-200 p-1 rounded transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
