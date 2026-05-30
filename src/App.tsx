@@ -1293,29 +1293,6 @@ Report compiled by Bijakbaca — Proportional Media Inquiry. Offline & Independe
               transition={{ duration: 0.5 }}
               className="bg-paper-100 border-8 border-charcoal-900 p-4 md:p-8 rounded-lg shadow-2xl relative max-w-5xl mx-auto my-12 overflow-hidden"
             >
-              {activeReport.isSimulated && (
-                <div className="mb-6 bg-amber-50/95 border-l-4 border-amber-600 rounded-r-lg p-4 font-mono text-xs text-amber-900 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-3" id="simulated-warning-banner">
-                  <div className="flex items-start gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse mt-1.5 flex-shrink-0"></span>
-                    <div>
-                      <span className="font-bold block text-amber-950 uppercase tracking-wide">
-                        {lang === "id" ? "⚠️ MODE BACKUP HEURISTIK AKTIF" : "⚠️ HEURISTIC COGNITIVE BACKUP IN USE"}
-                      </span>
-                      <p className="text-[11px] text-amber-900/90 leading-relaxed mt-0.5 max-w-2xl font-sans">
-                        {lang === "id" 
-                          ? "Batas kuota harian API Gemini global telah tercapai (429). Agar aplikasi Perspectra tetap dapat berfungsi tanpa interupsi, mesin analisis kami beralih otomatis ke mode heuristik luring mendalam." 
-                          : "The global Gemini API key has exceeded its rate limit (429). To ensure uninterrupted access, the system has automatically activated its offline deep heuristic fallback processor."}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-[10px] bg-amber-200/60 border border-amber-500/20 px-2.5 py-1 rounded-[4px] self-start md:self-auto font-mono text-amber-950 max-w-xs leading-tight">
-                    {lang === "id" 
-                      ? "Hubungkan Kunci API di Pengaturan untuk AI penuh" 
-                      : "Add your personal key in Settings for full AI powers"}
-                  </div>
-                </div>
-              )}
-
               {/* Retro broadsheet print header markings */}
               <div className="flex items-center justify-between border-b-2 border-dashed border-charcoal-700 pb-3 mb-6 select-none font-mono text-xs text-charcoal-700">
                 <div className="flex items-center gap-2">

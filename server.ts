@@ -135,124 +135,6 @@ function formatGeminiError(err: any, lang: string): string {
   return errMsg;
 }
 
-function isQuotaOrKeyError(err: any): boolean {
-  const errMsg = err?.message || String(err);
-  const errStr = (JSON.stringify(err) || "").toLowerCase() + " " + errMsg.toLowerCase();
-  
-  return (
-    errMsg.includes("quota") || 
-    errMsg.includes("exhausted") || 
-    errMsg.includes("limit") || 
-    errMsg.includes("429") || 
-    errStr.includes("resource_exhausted") || 
-    errStr.includes("limit") ||
-    errStr.includes("quota") ||
-    errStr.includes("429") ||
-    errStr.includes("api_key") ||
-    errStr.includes("not configured") ||
-    errStr.includes("unauthorized")
-  );
-}
-
-function generateHeuristicReport(headline: string, siteName: string, bodyCopy: string, lang: "id" | "en") {
-  const cleanBody = (bodyCopy || "").replace(/\[Direct scraper fetched thin text[\s\S]*?\]/, "");
-  const sentences = cleanBody
-    .split(/[.!?]+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 25);
-
-  const words = ((headline || "") + " " + cleanBody).split(/\s+/);
-  const capitalizedEntitiesSet = new Set<string>();
-  
-  words.forEach(word => {
-    const match = word.match(/^[A-Z][a-z]+/);
-    if (match) {
-      const entity = match[0];
-      if (entity.length > 3 && !["Yang", "Akan", "Oleh", "Pada", "Atas", "Dari", "Para", "Juga", "Bisa", "Dalam", "Serta", "This", "That", "With", "From", "They", "Then", "More", "With", "Their", "About"].includes(entity)) {
-        capitalizedEntitiesSet.add(entity);
-      }
-    }
-  });
-
-  const entities = Array.from(capitalizedEntitiesSet).slice(0, 8);
-  const keywordsStr = entities.length > 0 ? entities.join(", ") : (lang === "id" ? "isu utama" : "key issue");
-
-  const extractedClaims: string[] = [];
-  if (sentences.length >= 3) {
-    const indexes = [0, Math.floor(sentences.length / 2), Math.min(sentences.length - 1, sentences.length - 2)];
-    indexes.forEach(idx => {
-      if (sentences[idx] && extractedClaims.length < 4) {
-        const cleanS = sentences[idx].replace(/^[\s\-\*•\d\.]+/g, "").trim();
-        if (cleanS.length > 25) {
-          extractedClaims.push(cleanS + ".");
-        }
-      }
-    });
-  }
-
-  if (extractedClaims.length < 3) {
-    if (lang === "id") {
-      extractedClaims.push(`Artikel berargumen bahwa dinamika terkait ${keywordsStr} menuntut perhatian regulasi segera.`);
-      extractedClaims.push(`Pemberitaan memposisikan ${siteName || "sumber media"} sebagai saluran primer yang memetakan isu.`);
-      extractedClaims.push(`Terdapat penekšanas implisit bahwa penyelesaian masalah harus didukung koordinasi terpadu.`);
-    } else {
-      extractedClaims.push(`The article asserts that the dynamics surrounding ${keywordsStr} require immediate regulatory oversight.`);
-      extractedClaims.push(`The reporting frames ${siteName || "the media source"} as a pivotal platform mapping the narrative.`);
-      extractedClaims.push(`There is an implicit narrative that solutions must stem from proactive, institutional frameworks.`);
-    }
-  }
-
-  let summary = "";
-  let framing = "";
-  let blindSpots = "";
-  let globalContext = "";
-  let criticalQuestions: string[] = [];
-
-  if (lang === "id") {
-    summary = `Analisis telegraf ini disajikan oleh Bijakbaca Heuristics Engine karena kendala koneksi API saat ini.\n\nArtikel dari ${siteName || "Media Berita"} meliput secara intensif tentang isu "${headline || "Kabar Terkini"}". Laporan memfokuskan bahasannya pada implikasi dari perkembangan terbaru mengenai ${keywordsStr}, menyertakan argumen yang menuntut respon kolaboratif dari para pelaku industri dan pembuat kebijakan. Fokus utama tulisan adalah membangun kesadaran kritis pembaca mengenai dinamika struktural yang mendorong perubahan ini.`;
-
-    framing = `Tone pelaporan yang diterapkan oleh ${siteName || "sumber media"} dinilai mengedepankan urgensi dan aksi responsif. Susunan teks membangun kerangka akuntabilitas yang jelas bagi pihak berwenang, dengan penekanan naratif pada dampak prosedural jangka pendek. Media menyusun cerita dengan porsi penyorotan besar pada aspek kuantitatif, sementara latar sejarah dan pertimbangan berskala mikro diletakkan di bagian background.`;
-
-    blindSpots = `Terdapat beberapa titik buta editorial yang mencolok di dalam pelaporan ini. Suara dari perwakilan akar rumput, tenaga pelaksana lapangan, atau kelompok masyarakat independen yang terpengaruh langsung tidak diberikan ruang bicara yang seimbang. Lebih lanjut, analisis mengenai perbandingan efisiensi biaya sosial terhadap model regulasi alternatif sengaja dikesampingkan, menghasilkan alur pemikiran yang cenderung linear dan seragam.`;
-
-    globalContext = `Pada panggung internasional, liputan mengenai ${keywordsStr} memiliki spektrum pemaknaan yang plural. Sektor media di negara maju Barat umumnya menyoroti kepatuhan tata kelola, transparansi hukum, dan standar lingkungan global. Sebaliknya, institusi pers di kawasan Asia Timur dan negara-negara berkembang (Global South) lebih condong membingkai peristiwa ini dalam koridor akselerasi infrastruktur ekonomi nasional, stabilitas wilayah, dan kedaulatan industri dalam negeri.`;
-
-    criticalQuestions = [
-      `Apakah ada basis data empiris eksternal yang dihilangkan oleh ${siteName || "penerbit"} untuk mempertahankan asumsi krisis di dalam artikel ini?`,
-      `Siapakah pemangku kebijakan atau kelompok korporasi yang diuntungkan posisinya dengan promosi solusi sepihak ini?`,
-      `Bagaimanakah pendapat akademisi atau pengamat independen yang tidak berafiliasi dengan narasumber utama terkait pernyataan: "${extractedClaims[0] ? extractedClaims[0].substring(0, 50) + "..." : "klaim utama"}"?`,
-      `Mengapa media membatasi opsi penyelesaian pada jalur institusional formal dan mengabaikan inisiatif komunitas lokal?`
-    ];
-  } else {
-    summary = `This media deconstruction report is presented by the Bijakbaca Heuristic Engine due to temporary API limits.\n\nThe article from ${siteName || "the publication source"} examines the developments behind "${headline || "the main event"}". The reporting focuses on the implications surrounding ${keywordsStr}, conveying a structured series of arguments emphasizing how regulatory bodies, global institutions, and industry players must coordinate to address these ongoing changes.`;
-
-    framing = `The framing used by ${siteName || "the publisher"} leans towards an analytical, high-urgency tone. It establishes a direct chain of accountability for governing bodies while prioritizing micro-impact studies over long-term strategic historical perspectives. Characters in this narrative are portrayed via their action-oriented statements, nudging the audience toward endorsing immediate institutional reform.`;
-
-    blindSpots = `Several critical blind spots occur in this study. The voices of local grassroots stakeholders, regional experts, or neutral standard-setting panels are not explicitly cited. Furthermore, the socio-economic tradeoffs of potential alternate solutions are skipped over, resulting in a single-track narrative prioritizing structural intervention above all else.`;
-
-    globalContext = `Globally, news surrounding ${keywordsStr} is framed from varying geopolitical perspectives. While media outlets in the West often prioritize international standards of accountability, ethical compliance, and legal structures, news organizations in Asia-Pacific and developing economies tend to view this through the lens of developmental stability, infrastructure scaling, and sovereign immunity.`;
-
-    criticalQuestions = [
-      `What historic context or scientific consensus did ${siteName || "the author"} overlook to create a sense of singular narrative alignment?`,
-      `Which commercial interest groups or political leaders stand to gain the most prestige from the actions proposed here?`,
-      `How do independent regional experts who are detached from official source networks react to the claim: "${extractedClaims[0] ? extractedClaims[0].substring(0, 50) + "..." : "the primary claim"}"?`,
-      `Why did the author position high-level top-down interventions as the only viable response while omitting local, bottom-up practices?`
-    ];
-  }
-
-  return {
-    headline: headline || "Selected News Event",
-    sourceName: siteName || "Digital Publisher",
-    summary,
-    framing,
-    claims: extractedClaims,
-    blindSpots,
-    globalContext,
-    criticalQuestions,
-    isSimulated: true
-  };
-}
-
 async function startServer() {
   const app = express();
   app.use(express.json());
@@ -275,15 +157,14 @@ async function startServer() {
 
   // API Endpoint: Analyze News Article
   app.post("/api/analyze", async (req, res) => {
-    const { url, rawText, headline: customHeadline = "", siteName: customSiteName = "", lang: reqLang } = req.body || {};
-    const lang = reqLang === "en" ? "en" : "id";
-    
-    let headline = "";
-    let siteName = "";
-    let bodyCopy = "";
-    let targetUrl = url;
-
     try {
+      const { url, rawText, headline: customHeadline, siteName: customSiteName, lang: reqLang } = req.body;
+      const lang = reqLang === "en" ? "en" : "id";
+      
+      let headline = "";
+      let siteName = "";
+      let bodyCopy = "";
+      let targetUrl = url;
 
       // Check if user is submitting raw text directly
       if (rawText && typeof rawText === "string" && rawText.trim().length > 10) {
@@ -457,11 +338,6 @@ Conduct the Bijakbaca media literacy analysis.`;
 
     } catch (err: any) {
       console.error("Gemini News analysis crash error:", err);
-      if (isQuotaOrKeyError(err) || !process.env.GEMINI_API_KEY) {
-        console.log("Activating high-fidelity offline heuristic backup analyzer");
-        const fallbackReport = generateHeuristicReport(headline, siteName, bodyCopy, lang);
-        return res.json(fallbackReport);
-      }
       const userFriendlyMsg = formatGeminiError(err, req.body?.lang || "id");
       res.status(500).json({ error: userFriendlyMsg });
     }
@@ -469,12 +345,12 @@ Conduct the Bijakbaca media literacy analysis.`;
 
   // API Endpoint: Translate Report to target language
   app.post("/api/translate", async (req, res) => {
-    const { report, targetLang } = req.body || {};
-    if (!report || !targetLang) {
-      return res.status(400).json({ error: "Report data and target language are required for translation." });
-    }
-
     try {
+      const { report, targetLang } = req.body;
+      if (!report || !targetLang) {
+        return res.status(400).json({ error: "Report data and target language are required for translation." });
+      }
+
       console.log(`Translating report to language: ${targetLang}`);
 
       const ai = getGeminiClient();
@@ -532,11 +408,6 @@ ${JSON.stringify(report)}
 
     } catch (err: any) {
       console.error("Gemini Report translation error:", err);
-      if (report?.isSimulated || isQuotaOrKeyError(err) || !process.env.GEMINI_API_KEY) {
-        console.log("Activating high-fidelity offline heuristic translation generation");
-        const fallbackReport = generateHeuristicReport(report.headline, report.sourceName, "", targetLang === "id" ? "id" : "en");
-        return res.json(fallbackReport);
-      }
       const userFriendlyMsg = formatGeminiError(err, req.body?.targetLang || "id");
       res.status(500).json({ error: userFriendlyMsg });
     }
